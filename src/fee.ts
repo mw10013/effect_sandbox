@@ -1,5 +1,25 @@
 import { Effect, Config, Context, Layer } from "effect";
 
+export interface Random {
+  readonly next: Effect.Effect<never, never, number>;
+}
+
+export const Random = Context.Tag<Random>();
+
+export const RandomLive = Layer.succeed(
+  Random,
+  Random.of({
+    next: Effect.sync(() => Math.random()),
+  })
+);
+
+export const RandomTest = Layer.succeed(
+  Random,
+  Random.of({
+    next: Effect.sync(() => 7),
+  })
+);
+
 export interface NameService {
   readonly getName: Effect.Effect<never, never, string>;
 }
@@ -16,18 +36,32 @@ export const NameServiceLive = Layer.succeed(
 );
 
 export const program = Effect.gen(function* (_) {
-  const service = yield* _(NameService);
-  const name = yield* _(service.getName);
-  console.log(`Hello ${name}!`);
+  const random = yield* _(Random);
+  const randomNumber = yield* _(random.next);
+  console.log(`Random number: ${randomNumber}`);
+
+  // const service = yield* _(NameService);
+  // const name = yield* _(service.getName);
+  // console.log(`Hello ${name}!`);
   const hubspotApiKey = yield* _(
-    Effect.config(Config.string("HUBSPOT_API_KEY1"))
+    Effect.config(Config.string("HUBSPOT_API_KEY"))
   );
   console.log(`hubspotApiKey: ${hubspotApiKey}`);
 });
 
-const main = Effect.provide(program, NameServiceLive);
+// const runnable = Effect.provideService(
+//   program,
+//   Random,
+//   Random.of({
+//     next: Effect.sync(() => Math.random()),
+//   })
+// );
+// const runnable = Effect.provide(program, RandomLive);
+const runnable = Effect.provide(program, RandomTest);
+Effect.runSync(runnable);
 
-Effect.runSync(main);
+// const main = Effect.provide(program, NameServiceLive);
+// Effect.runSync(main);
 
 // $ExpectType Effect<never, ConfigError, void>
 // const program = Effect.gen(function* (_) {
