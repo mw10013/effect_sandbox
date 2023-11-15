@@ -52,7 +52,7 @@ export const program = Effect.gen(function* (_) {
   const name = yield* _(service.getName);
   console.log(`Hello ${name}!`);
   const hubspotApiKey = yield* _(
-    Effect.config(Config.string("HUBSPOT_API_KEY"))
+    Effect.config(Config.string("HUBSPOT_PRIVATE_ACCESS_TOKEN"))
   );
   console.log(`hubspotApiKey: ${hubspotApiKey}`);
 });
@@ -82,7 +82,7 @@ Effect.runSync(runnable);
 // $ExpectType Effect<never, ConfigError, void>
 // const program = Effect.gen(function* (_) {
 //   const hubspotApiKey = yield* _(
-//     Effect.config(Config.string("HUBSPOT_API_KEY"))
+//     Effect.config(Config.string("HUBSPOT_PRIVATE_ACCESS_TOKEN"))
 //   );
 //   console.log(`hubspotApiKey: ${hubspotApiKey}`);
 // });
