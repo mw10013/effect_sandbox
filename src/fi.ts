@@ -1,4 +1,4 @@
-import { Config, Effect, pipe } from "effect";
+import { Config, Console, Effect, LogLevel, Logger, pipe } from "effect";
 
 // const contact = await (async (accessToken) => {
 //     if (!accessToken) {
@@ -35,10 +35,15 @@ const program = Effect.gen(function* (_) {
   const accessToken = yield* _(
     Effect.config(Config.string("HUBSPOT_PRIVATE_ACCESS_TOKEN"))
   );
+  yield* _(Effect.logDebug(`accessToken: ${accessToken}`));
   const response = yield* _(fetchContact(accessToken));
-  console.log("response: %o", response);
+  //   console.log("response: %o", response);
   const json = yield* _(getJson(response));
-  console.log("json: %o", json);
-});
+  yield* _(Console.log("json: %o", json));
+}).pipe(Logger.withMinimumLogLevel(LogLevel.Debug));
+
+const main = program.pipe(
+  Effect.catchAll(() => Console.error("A dreadful error occurred"))
+);
 
 Effect.runPromise(program).catch((err) => console.error("err:", err));
