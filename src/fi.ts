@@ -14,6 +14,8 @@ import { Config, Console, Effect, LogLevel, Logger, pipe } from "effect";
 //     return await response.json();
 //   })(await getAccessToken({session, env}));
 
+
+
 const fetchContact = (accessToken: string) =>
   Effect.tryPromise({
     try: () =>
@@ -40,10 +42,14 @@ const program = Effect.gen(function* (_) {
   //   console.log("response: %o", response);
   const json = yield* _(getJson(response));
   yield* _(Console.log("json: %o", json));
+  //   throw new Error("Woah");
 }).pipe(Logger.withMinimumLogLevel(LogLevel.Debug));
 
 const main = program.pipe(
   Effect.catchAll(() => Console.error("A dreadful error occurred"))
 );
 
-Effect.runPromise(program).catch((err) => console.error("err:", err));
+Effect.runPromise(main).catch((defect) => {
+  console.error("Caught defect:", defect);
+  process.exit(1);
+});
