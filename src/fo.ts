@@ -60,23 +60,19 @@ await (async () => {
 })();
 
 await (async () => {
-  const req = Http.request.get(
-    "https://api.hubapi.com/crm/v3/objects/contacts/1?archived=false"
-  );
-  console.log("req: %o", req);
-
-  //   const program = req.pipe(
-  //     Http.client.fetch(),
-  //     Effect.flatMap((res) => res.json)
-  //   );
-
   const program = Effect.gen(function* (_) {
     const accessToken = yield* _(
       Effect.config(Config.string("HUBSPOT_PRIVATE_ACCESS_TOKEN"))
     );
     yield* _(Effect.logInfo(`accessToken: ${accessToken}`));
+
+    const request = Http.request
+      .get("https://api.hubapi.com/crm/v3/objects/contacts/1?archived=false")
+      .pipe(Http.request.bearerToken(accessToken));
+    console.log("request: %o", request);
+
     const response = yield* _(
-      req,
+      request,
       Http.client.fetch(),
       Effect.flatMap((res) => res.json)
     );
@@ -85,19 +81,3 @@ await (async () => {
 
   await Effect.runPromise(program).then(console.log, console.error);
 })();
-
-// const program = Effect.gen(function* (_) {
-//   const accessToken = yield* _(
-//     Effect.config(Config.string("HUBSPOT_PRIVATE_ACCESS_TOKEN"))
-//   );
-//   yield* _(Effect.logDebug(`accessToken: ${accessToken}`));
-// }).pipe(Logger.withMinimumLogLevel(LogLevel.Debug));
-
-// const main = program.pipe(
-//   Effect.catchAll(() => Console.error("A dreadful error occurred"))
-// );
-
-// Effect.runPromise(main).catch((defect) => {
-//   console.error("Caught defect:", defect);
-//   process.exit(1);
-// });
