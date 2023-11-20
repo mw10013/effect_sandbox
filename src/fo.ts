@@ -21,7 +21,7 @@ await (async () => {
 
 await (async () => {
   const req = Http.request.get("https://jsonplaceholder.typicode.com/posts/1");
-  console.log("req:", req);
+  console.log("req: %o", req);
 
   const Post = Schema.struct({
     userId: Schema.number,
@@ -36,6 +36,54 @@ await (async () => {
   );
 
   await Effect.runPromise(program).then(console.log).catch(console.error);
+})();
+
+await (async () => {
+  const req = Http.request
+    .post("https://jsonplaceholder.typicode.com/posts")
+    .pipe(
+      Http.request.setHeader("Content-type", "application/json; charset=UTF-8"),
+      Http.request.jsonBody({
+        title: "foo",
+        body: "bar",
+        userId: 1,
+      })
+    );
+  console.log("req: %o", req);
+
+  const program = req.pipe(
+    Effect.flatMap(Http.client.fetch()),
+    Effect.flatMap((res) => res.json)
+  );
+
+  await Effect.runPromise(program).then(console.log, console.error);
+})();
+
+await (async () => {
+  const req = Http.request.get(
+    "https://api.hubapi.com/crm/v3/objects/contacts/1?archived=false"
+  );
+  console.log("req: %o", req);
+
+  //   const program = req.pipe(
+  //     Http.client.fetch(),
+  //     Effect.flatMap((res) => res.json)
+  //   );
+
+  const program = Effect.gen(function* (_) {
+    const accessToken = yield* _(
+      Effect.config(Config.string("HUBSPOT_PRIVATE_ACCESS_TOKEN"))
+    );
+    yield* _(Effect.logInfo(`accessToken: ${accessToken}`));
+    const response = yield* _(
+      req,
+      Http.client.fetch(),
+      Effect.flatMap((res) => res.json)
+    );
+    console.log("response: %o", response);
+  });
+
+  await Effect.runPromise(program).then(console.log, console.error);
 })();
 
 // const program = Effect.gen(function* (_) {
