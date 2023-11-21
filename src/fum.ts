@@ -1,5 +1,6 @@
 import { Config, Effect } from "effect";
-import * as Http from "@effect/platform/HttpClient";
+// import * as Http from "@effect/platform/HttpClient";
+import { HttpClient } from "@effect/platform";
 
 const program = Effect.gen(function* (_) {
   const accessToken = yield* _(
@@ -7,14 +8,14 @@ const program = Effect.gen(function* (_) {
   );
   yield* _(Effect.logInfo(`accessToken: ${accessToken}`));
 
-  const request = Http.request
+  const request = HttpClient.request
     .get("https://api.hubapi.com/crm/v3/objects/contacts/1?archived=false")
-    .pipe(Http.request.bearerToken(accessToken));
+    .pipe(HttpClient.request.bearerToken(accessToken));
   console.log("request: %o", request);
 
   const response = yield* _(
     request,
-    Http.client.fetch(),
+    HttpClient.client.fetch(),
     Effect.flatMap((res) => res.json)
   );
   console.log("response: %o", response);
