@@ -1,4 +1,4 @@
-import { dual } from "effect/Function";
+import { dual, pipe } from "effect/Function";
 import { pipeArguments, type Pipeable } from "effect/Pipeable";
 
 const TypeId = Symbol.for("effect_sandbox/Pipsqueak");
@@ -43,3 +43,5 @@ const increment = dual<
 const p = empty.pipe(setString("a"), setNumber(1), increment(1));
 console.log("p: %o", p);
 console.log("isPipsqueak:", isPipsqueak(p));
+
+console.log("pipe:", pipe(empty, setString("a"), setNumber(1), increment(1)));
