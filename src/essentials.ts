@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import * as NodeFS from "node:fs"
+import * as NodeFS from "node:fs";
 
 // const program = Effect.succeed(42);
 // const program = Effect.fail("my error");
@@ -29,16 +29,21 @@ import * as NodeFS from "node:fs"
 //     })
 // );
 
-const program = Effect.async<never, Error, Buffer>((resume) => {
-    NodeFS.readFile("todos.txt", (error, data) => {
-      if (error) {
-        resume(Effect.fail(error))
-      } else {
-        resume(Effect.succeed(data))
-      }
-    })
-  })
+// const program = Effect.async<never, Error, Buffer>((resume) => {
+//     NodeFS.readFile("todos.txt", (error, data) => {
+//       if (error) {
+//         resume(Effect.fail(error))
+//       } else {
+//         resume(Effect.succeed(data))
+//       }
+//     })
+//   })
+
+const program = Effect.sync(() => {
+  console.log("Hello, World!");
+  return 1;
+});
 
 console.log("program: %o", program);
-await Effect.runPromise(program).then(console.log, console.error);
+console.log("runSync:", Effect.runSync(program));
 await Effect.runPromise(program).then(console.log, console.error);

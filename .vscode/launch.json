@@ -11,7 +11,7 @@
       "skipFiles": ["<node_internals>/**"],
       // "program": "${workspaceFolder}/src/fum.ts",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["x", "src/fum.ts"],
+      "runtimeArgs": ["x", "src/essentials.ts"],
       "sourceMaps": true,
       "outFiles": ["${workspaceFolder}/**/*.js"]
     }
