@@ -26,12 +26,9 @@ const flatMappedEffect = pipe(
 await Effect.runPromise(flatMappedEffect).then(console.log);
 
 const task1 = Effect.promise(() => Promise.resolve(10));
-// $ExpectType Effect<never, never, number>
 const task2 = Effect.promise(() => Promise.resolve(2));
 
-// $ExpectType Effect<never, Error, string>
-const program = pipe(
-  Effect.all([task1, task2]),
+const program = Effect.all([task1, task2]).pipe(
   Effect.tap(([a, b]) =>
     Effect.sync(() => console.log(`Performing division: ${a} / ${b}`))
   ),
