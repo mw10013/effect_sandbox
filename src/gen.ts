@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Random } from "effect";
 
 const task = Effect.sync(() => {
   console.log("Hello, World!");
@@ -6,8 +6,16 @@ const task = Effect.sync(() => {
 });
 
 export const program = Effect.gen(function* (_) {
-  const t = yield* _(task);
-  return `Result is: ${t}`;
+  //   const t = yield* _(task);
+  //   return `Result is: ${t}`;
+  const n = yield* _(
+    // Random.next,
+    // Effect.map((n) => n * 2)
+    7,
+    (n) => n * 2,
+    (n) => Effect.succeed(n + 1)
+  );
+  return n;
 });
 
 Effect.runPromise(program).then(console.log, console.error);
