@@ -3,6 +3,8 @@ import { HttpClient } from "@effect/platform";
 import * as Schema from "@effect/schema/Schema";
 import { ParseResult } from "@effect/schema";
 
+// https://gist.github.com/yanisurbis/37c3cf6ffdaf37cb0fa1abe09c05a258
+
 export const ContactResponse = Schema.struct({
   id: Schema.string,
   properties: Schema.struct({
@@ -57,9 +59,11 @@ export const HubspotServiceLive = Layer.succeed(
   })
 );
 
-const program = Effect.gen(function* (_) {
+const blueprint = Effect.gen(function* (_) {
   const hubspotService = yield* _(HubspotService);
   return yield* _(hubspotService.getContact());
-}).pipe(Effect.provide(HubspotServiceLive));
+});
 
-await Effect.runPromise(program).then(console.log, console.error);
+const runnable = blueprint.pipe(Effect.provide(HubspotServiceLive));
+
+await Effect.runPromise(runnable).then(console.log, console.error);
