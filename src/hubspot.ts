@@ -4,7 +4,7 @@ import * as Schema from "@effect/schema/Schema";
 import { ParseResult } from "@effect/schema";
 
 export const ContactResponse = Schema.struct({
-  id: Schema.number,
+  id: Schema.string,
   properties: Schema.struct({
     email: Schema.string,
     firstname: Schema.string,
@@ -60,23 +60,8 @@ export const HubspotServiceLive = Layer.succeed(
 );
 
 const program = Effect.gen(function* (_) {
-  const accessToken = yield* _(
-    Effect.config(Config.string("HUBSPOT_PRIVATE_ACCESS_TOKEN"))
-  );
-  yield* _(Effect.logInfo(`accessToken: ${accessToken}`));
-
-  const request = HttpClient.request
-    .get("https://api.hubapi.com/crm/v3/objects/contacts/1?archived=false")
-    .pipe(HttpClient.request.bearerToken(accessToken));
-  console.log("request: %o", request);
-
-  const response = yield* _(
-    request,
-    HttpClient.client.fetch(),
-    Effect.flatMap((res) => res.json)
-  );
-  console.log("response: %o", response);
-});
+  const hubspotService = yield* _(HubspotService);
+  return yield* _(hubspotService.getContact());
+}).pipe(Effect.provide(HubspotServiceLive));
 
 await Effect.runPromise(program).then(console.log, console.error);
-
