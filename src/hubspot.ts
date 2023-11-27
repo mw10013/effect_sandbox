@@ -27,9 +27,7 @@ export interface HubspotService {
   readonly getContact: () => Effect.Effect<
     never,
     | ConfigError.ConfigError
-    | HttpClient.body.BodyError
-    | HttpClient.error.RequestError
-    | HttpClient.error.ResponseError
+    | HttpClient.error.HttpClientError
     | ParseResult.ParseError,
     ContactResponse
   >;
@@ -48,7 +46,7 @@ export const HubspotServiceLive = Layer.succeed(
         const request = HttpClient.request
           .get(`${config.apiUrl}objects/contacts/1?archived=false`)
           .pipe(HttpClient.request.bearerToken(config.privateAccessToken));
-        console.log("request: %o", request);
+        // console.log("request: %o", request);
 
         return yield* _(
           request,
