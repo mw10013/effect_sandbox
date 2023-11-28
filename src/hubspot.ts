@@ -76,6 +76,19 @@ await Effect.runPromise(runnable).then(console.log, (reason) =>
 const bp = Effect.gen(function* (_) {
   const defaultClient = yield* _(Http.client.Client);
   console.log("defaultClient: %o", defaultClient);
+
+  const client = defaultClient.pipe(HttpClient.client.filterStatusOk);
+  const config = yield* _(Effect.config(hubspotConfig));
+  return yield* _(
+    HttpClient.request.get(`${config.apiUrl}objects/contacts/1?archived=false`),
+    HttpClient.request.bearerToken(config.privateAccessToken),
+    (request) => {
+      console.log("request: %o", request);
+      return request;
+    },
+    defaultClient.pipe(HttpClient.client.filterStatusOk),
+    Effect.flatMap(HttpClient.response.schemaBodyJson(ContactResponse))
+  );
 });
 
 const r = Effect.provide(bp, HttpClient.client.layer);
