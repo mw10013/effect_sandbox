@@ -1,6 +1,5 @@
 import { Config, ConfigError, Context, Effect, Layer } from "effect";
 import { HttpClient } from "@effect/platform";
-import * as Http from "@effect/platform/HttpClient";
 import * as Schema from "@effect/schema/Schema";
 import { ParseResult } from "@effect/schema";
 
@@ -40,12 +39,14 @@ export const HubspotService = Context.Tag<HubspotService>(
   "@app/HubspotService"
 );
 
-export const HubspotServiceLive = Layer.succeed(
+export const HubspotServiceLive = Layer.effect(
   HubspotService,
-  HubspotService.of({
-    getContact: () =>
+  Effect.gen(function* (_) {
+    const client = yield* _(HttpClient.client.Client);
+    const config = yield* _(Effect.config(hubspotConfig));
+
+    const getContact: HubspotService["getContact"] = () =>
       Effect.gen(function* (_) {
-        const config = yield* _(Effect.config(hubspotConfig));
         return yield* _(
           HttpClient.request.get(
             `${config.apiUrl}objects/contacts/1?archived=false`
@@ -55,10 +56,11 @@ export const HubspotServiceLive = Layer.succeed(
             console.log("request: %o", request);
             return request;
           },
-          HttpClient.client.fetch(),
+          client,
           Effect.flatMap(HttpClient.response.schemaBodyJson(ContactResponse))
         );
-      }),
+      });
+    return HubspotService.of({ getContact });
   })
 );
 
@@ -67,30 +69,11 @@ const blueprint = Effect.gen(function* (_) {
   return yield* _(hubspotService.getContact());
 });
 
-const runnable = blueprint.pipe(Effect.provide(HubspotServiceLive));
+const runnable = Effect.provide(
+  blueprint,
+  HttpClient.client.layer.pipe(Layer.provide(HubspotServiceLive))
+);
 
 await Effect.runPromise(runnable).then(console.log, (reason) =>
   console.error("error: %o", reason)
 );
-
-const bp = Effect.gen(function* (_) {
-  const defaultClient = yield* _(Http.client.Client);
-  console.log("defaultClient: %o", defaultClient);
-
-  const client = defaultClient.pipe(HttpClient.client.filterStatusOk);
-  const config = yield* _(Effect.config(hubspotConfig));
-  return yield* _(
-    HttpClient.request.get(`${config.apiUrl}objects/contacts/1?archived=false`),
-    HttpClient.request.bearerToken(config.privateAccessToken),
-    (request) => {
-      console.log("request: %o", request);
-      return request;
-    },
-    defaultClient.pipe(HttpClient.client.filterStatusOk),
-    Effect.flatMap(HttpClient.response.schemaBodyJson(ContactResponse))
-  );
-});
-
-const r = Effect.provide(bp, HttpClient.client.layer);
-
-await Effect.runPromise(r).then(console.log, console.error);
