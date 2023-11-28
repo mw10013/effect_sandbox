@@ -1,5 +1,6 @@
 import { Config, ConfigError, Context, Effect, Layer } from "effect";
 import { HttpClient } from "@effect/platform";
+import * as Http from "@effect/platform/HttpClient";
 import * as Schema from "@effect/schema/Schema";
 import { ParseResult } from "@effect/schema";
 
@@ -45,13 +46,15 @@ export const HubspotServiceLive = Layer.succeed(
     getContact: () =>
       Effect.gen(function* (_) {
         const config = yield* _(Effect.config(hubspotConfig));
-        const request = HttpClient.request
-          .get(`${config.apiUrl}objects/contacts/1?archived=false`)
-          .pipe(HttpClient.request.bearerToken(config.privateAccessToken));
-        // console.log("request: %o", request);
-
         return yield* _(
-          request,
+          HttpClient.request.get(
+            `${config.apiUrl}objects/contacts/1?archived=false`
+          ),
+          HttpClient.request.bearerToken(config.privateAccessToken),
+          (request) => {
+            console.log("request: %o", request);
+            return request;
+          },
           HttpClient.client.fetch(),
           Effect.flatMap(HttpClient.response.schemaBodyJson(ContactResponse))
         );
@@ -66,4 +69,15 @@ const blueprint = Effect.gen(function* (_) {
 
 const runnable = blueprint.pipe(Effect.provide(HubspotServiceLive));
 
-await Effect.runPromise(runnable).then(console.log, console.error);
+await Effect.runPromise(runnable).then(console.log, (reason) =>
+  console.error("error: %o", reason)
+);
+
+const bp = Effect.gen(function* (_) {
+  const defaultClient = yield* _(Http.client.Client);
+  console.log("defaultClient: %o", defaultClient);
+});
+
+const r = Effect.provide(bp, HttpClient.client.layer);
+
+await Effect.runPromise(r).then(console.log, console.error);
