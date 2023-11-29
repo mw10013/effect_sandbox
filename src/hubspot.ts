@@ -2,6 +2,7 @@ import { Config, ConfigError, Context, Effect, Layer } from "effect";
 import { HttpClient } from "@effect/platform";
 import * as Schema from "@effect/schema/Schema";
 import { ParseResult } from "@effect/schema";
+import { filterStatusOk } from "@effect/platform/Http/Client";
 
 // https://gist.github.com/yanisurbis/37c3cf6ffdaf37cb0fa1abe09c05a258
 
@@ -50,16 +51,16 @@ export const HubspotServiceLive = Layer.effect(
       ),
       HttpClient.client.tapRequest((request) =>
         Effect.sync(() => console.log("tapRequest: %o", request))
-      )
+      ),
+      HttpClient.client.filterStatusOk
     );
 
     const getContact: HubspotService["getContact"] = () =>
       Effect.gen(function* (_) {
         return yield* _(
           HttpClient.request.get(
-            `${config.apiUrl}objects/contacts/1?archived=false`
+            `${config.apiUrl}objectsss/contacts/1?archived=false`
           ),
-          // HttpClient.request.bearerToken(config.privateAccessToken),
           client,
           Effect.flatMap(HttpClient.response.schemaBodyJson(ContactResponse))
         );
