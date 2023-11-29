@@ -52,7 +52,20 @@ export const HubspotServiceLive = Layer.effect(
       HttpClient.client.tapRequest((request) =>
         Effect.sync(() => console.log("tapRequest: %o", request))
       ),
-      HttpClient.client.filterStatusOk
+      // HttpClient.client.filterStatusOk
+      HttpClient.client.transform((effect, request) =>
+        Effect.filterOrFail(
+          effect,
+          (response) => response.status >= 200 && response.status < 300,
+          (response) =>
+            HttpClient.error.ResponseError({
+              request,
+              response,
+              reason: "StatusCode",
+              error: `non 2xx status code (${response.status})`,
+            })
+        )
+      )
     );
 
     const getContact: HubspotService["getContact"] = () =>
