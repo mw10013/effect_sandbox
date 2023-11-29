@@ -42,13 +42,16 @@ export const HubspotService = Context.Tag<HubspotService>(
 export const HubspotServiceLive = Layer.effect(
   HubspotService,
   Effect.gen(function* (_) {
+    const config = yield* _(Effect.config(hubspotConfig));
     const defaultClient = yield* _(HttpClient.client.Client);
     const client = defaultClient.pipe(
+      HttpClient.client.mapRequest(
+        HttpClient.request.bearerToken(config.privateAccessToken)
+      ),
       HttpClient.client.tapRequest((request) =>
         Effect.sync(() => console.log("tapRequest: %o", request))
       )
     );
-    const config = yield* _(Effect.config(hubspotConfig));
 
     const getContact: HubspotService["getContact"] = () =>
       Effect.gen(function* (_) {
@@ -56,7 +59,7 @@ export const HubspotServiceLive = Layer.effect(
           HttpClient.request.get(
             `${config.apiUrl}objects/contacts/1?archived=false`
           ),
-          HttpClient.request.bearerToken(config.privateAccessToken),
+          // HttpClient.request.bearerToken(config.privateAccessToken),
           client,
           Effect.flatMap(HttpClient.response.schemaBodyJson(ContactResponse))
         );
