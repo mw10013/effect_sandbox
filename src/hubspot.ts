@@ -15,7 +15,9 @@ export const ContactResponse = Schema.struct({
   }),
 });
 
-export type ContactResponse = Schema.Schema.To<typeof ContactResponse>;
+// export type ContactResponse = Schema.Schema.To<typeof ContactResponse>;
+export interface ContactResponse
+  extends Schema.Schema.To<typeof ContactResponse> {}
 
 export class HubspotConfig {
   constructor(readonly privateAccessToken: string, readonly apiUrl: string) {}
@@ -52,20 +54,11 @@ export const HubspotServiceLive = Layer.effect(
       HttpClient.client.tapRequest((request) =>
         Effect.sync(() => console.log("tapRequest: %o", request))
       ),
-      // HttpClient.client.filterStatusOk
-      // HttpClient.client.transform((effect, request) =>
-      //   Effect.filterOrFail(
-      //     effect,
-      //     (response) => response.status >= 200 && response.status < 300,
-      //     (response) =>
-      //       HttpClient.error.ResponseError({
-      //         request,
-      //         response,
-      //         reason: "StatusCode",
-      //         error: `non 2xx status code (${response.status})`,
-      //       })
-      //   )
-      // )
+      HttpClient.client.tap((response) =>
+        Effect.sync(() =>
+          console.log("tap response status (pre filter):", response.status)
+        )
+      ),
       HttpClient.client.filterStatusOk
     );
 
@@ -73,9 +66,20 @@ export const HubspotServiceLive = Layer.effect(
       Effect.gen(function* (_) {
         return yield* _(
           HttpClient.request.get(
-            `${config.apiUrl}objectsss/contacts/1?archived=false`
+            `${config.apiUrl}BADURLobjects/contacts/1?archived=false`
           ),
           client,
+          Effect.catchTags({
+            ResponseError: (error) => {
+              if (error.reason === "StatusCode") {
+                console.error(
+                  "getContact: catchTags: ResponseError: StatusCode:",
+                  error.response.status
+                );
+              }
+              return Effect.fail(error);
+            },
+          }),
           Effect.flatMap(HttpClient.response.schemaBodyJson(ContactResponse))
         );
       });
@@ -88,11 +92,16 @@ const blueprint = Effect.gen(function* (_) {
   return yield* _(hubspotService.getContact());
 });
 
-const runnable = Effect.provide(
-  blueprint,
-  HttpClient.client.layer.pipe(Layer.provide(HubspotServiceLive))
+// const runnable = Effect.provide(
+//   blueprint,
+//   HttpClient.client.layer.pipe(Layer.provide(HubspotServiceLive))
+// );
+const runnable = blueprint.pipe(
+  Effect.provide(
+    HttpClient.client.layer.pipe(Layer.provide(HubspotServiceLive))
+  )
 );
 
 await Effect.runPromise(runnable).then(console.log, (reason) =>
-  console.error("error: %o", reason)
+  console.error("runPromise: rejected: %o", reason)
 );
